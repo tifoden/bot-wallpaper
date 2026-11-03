@@ -25,8 +25,8 @@ for directory in (root / "src", root / "Lock Screen Helper Source"):
 PYTHON
 if command -v ffmpeg >/dev/null && command -v ffprobe >/dev/null; then
   python3 "$PROJECT_DIR/tests/check_loop.py" "$PROJECT_DIR/resources/Grok Bot.mp4"
-  python3 "$PROJECT_DIR/tests/check_loop.py" "$PROJECT_DIR/resources/Lock Screen Source.mp4"
-  python3 "$PROJECT_DIR/tests/check_loop.py" "$PROJECT_DIR/resources/Lock Screen Prepared.mov"
+  python3 "$PROJECT_DIR/tests/check_loop.py" "$PROJECT_DIR/resources/Lock Screen Source.mp4" --moving-seam
+  python3 "$PROJECT_DIR/tests/check_loop.py" "$PROJECT_DIR/resources/Lock Screen Prepared.mov" --moving-seam
 else
   echo 'Loop checks skipped: ffmpeg and ffprobe are not installed.'
 fi

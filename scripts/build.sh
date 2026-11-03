@@ -20,7 +20,7 @@ mkdir -p "$APP/Contents/Resources/Lock Screen Helper Source"
 ditto "$PROJECT_DIR/Lock Screen Helper Source" "$APP/Contents/Resources/Lock Screen Helper Source"
 for arch in arm64 x86_64; do
   xcrun swiftc -target "$arch-apple-macos13.0" -F "$PROJECT_DIR/vendor" -framework Sparkle -Xlinker -rpath -Xlinker @executable_path/../Frameworks "$PROJECT_DIR/src/Wallpaper.swift" "$PROJECT_DIR/src/AppInstaller.swift" -o "$BUILD_DIR/objects/main-$arch"
-  xcrun swiftc -parse-as-library -target "$arch-apple-macos26.0" "$PROJECT_DIR/Lock Screen Helper Source/WallpaperStore.swift" "$PROJECT_DIR/Lock Screen Helper Source/AerialTemporalEncoder.swift" "$PROJECT_DIR/Lock Screen Helper Source/MacOS26LockScreenInstaller.swift" "$PROJECT_DIR/Lock Screen Helper Source/bot-motion-cli.swift" -o "$BUILD_DIR/objects/lock-$arch"
+  xcrun swiftc -parse-as-library -target "$arch-apple-macos26.0" "$PROJECT_DIR/Lock Screen Helper Source/LockScreenVideoRenderer.swift" "$PROJECT_DIR/Lock Screen Helper Source/WallpaperStore.swift" "$PROJECT_DIR/Lock Screen Helper Source/AerialTemporalEncoder.swift" "$PROJECT_DIR/Lock Screen Helper Source/MacOS26LockScreenInstaller.swift" "$PROJECT_DIR/Lock Screen Helper Source/bot-motion-cli.swift" -o "$BUILD_DIR/objects/lock-$arch"
 done
 lipo -create "$BUILD_DIR/objects/main-arm64" "$BUILD_DIR/objects/main-x86_64" -output "$APP/Contents/MacOS/Bot Wallpaper"
 lipo -create "$BUILD_DIR/objects/lock-arm64" "$BUILD_DIR/objects/lock-x86_64" -output "$APP/Contents/Helpers/lock-helper"

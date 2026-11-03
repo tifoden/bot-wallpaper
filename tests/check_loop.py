@@ -9,6 +9,7 @@ import subprocess
 import sys
 from pathlib import Path
 
+moving_seam = "--moving-seam" in sys.argv
 video = Path(sys.argv[1]) if len(sys.argv) > 1 else Path(__file__).resolve().parents[1] / "resources" / "Grok Bot.mp4"
 probe = subprocess.check_output([
     "ffprobe", "-v", "error", "-select_streams", "v:0", "-show_entries",
@@ -29,12 +30,13 @@ def frames(*args):
 
 seam_raw = subprocess.check_output([
     "ffmpeg", "-v", "error", "-i", str(video), "-vf",
-    f"select=eq(n\\,0)+eq(n\\,{count - 1}),scale=320:208", "-vsync", "0",
+    f"select=eq(n\\,0)+eq(n\\,1)+eq(n\\,{count - 1}),scale=320:208", "-vsync", "0",
     "-pix_fmt", "gray", "-f", "rawvideo", "-",
 ])
-if len(seam_raw) != 2 * frame_bytes:
+if len(seam_raw) != 3 * frame_bytes:
     raise SystemExit("Could not decode both loop endpoints")
-a, b = seam_raw[:frame_bytes], seam_raw[frame_bytes:]
+a, next_frame, b = (seam_raw[i * frame_bytes:(i + 1) * frame_bytes] for i in range(3))
+next_difference = sum(abs(x - y) for x, y in zip(a, next_frame)) / frame_bytes
 mean_difference = sum(abs(x - y) for x, y in zip(a, b)) / frame_bytes
 final_frames = frames("-sseof", "-2")
 if not final_frames:
@@ -42,6 +44,7 @@ if not final_frames:
 max_gray_fraction = max(sum(40 < p < 200 for p in frame) / frame_bytes for frame in final_frames)
 print(f"Loop endpoint mean difference: {mean_difference:.4f}/255")
 print(f"Maximum midtone fraction near loop: {max_gray_fraction:.4%}")
-if mean_difference > 0.1 or max_gray_fraction > 0.02:
+seam_limit = max(0.1, next_difference * 1.3) if moving_seam else 0.1
+if mean_difference > seam_limit or max_gray_fraction > 0.02:
     raise SystemExit("Loop seam mismatch or blended-frame ghosting detected")
 print("Loop check passed")

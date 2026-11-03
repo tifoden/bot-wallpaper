@@ -14,7 +14,7 @@ Download the ZIP from the [latest release](https://github.com/tifoden/bot-wallpa
 
 - Universal build for Apple Silicon and Intel Macs; macOS 13 or later. The animated lock screen option requires macOS 26 or later.
 - The lock screen option uses an Apple aerial video slot rather than a public macOS API. It backs up the existing video and settings before applying the wallpaper and restores them when disabled. Behavior may change after macOS updates.
-- The lock screen video is white and medium-sized; desktop color and size choices do not automatically apply to it.
+- Color and size choices also apply to the lock screen when enabled. The video is regenerated in the background, so changes may take a little time. macOS controls the lock-screen transition and may still delay the animation.
 - Sparkle 2 automatically checks for and installs updates. Update archives are verified using EdDSA signatures.
 - The lock screen helper is based on [Motion Wallpaper](https://github.com/krol44/MotionWallpaper), licensed under GPL-3.0. Its modified source and license are in `Lock Screen Helper Source`; the Sparkle license is included with its download.
 
@@ -59,7 +59,7 @@ Bot Wallpaper は、動くキャラクター壁紙の色とサイズをメニュ
 
 - Apple Silicon と Intel 向けのユニバーサルビルド。macOS 13 以降に対応し、動くロック画面には macOS 26 以降が必要です。
 - ロック画面には公開 API ではなく Apple の空撮動画スロットを使用します。適用前に既存の動画と設定をバックアップし、無効化時に復元します。macOS の更新により動作が変わる場合があります。
-- ロック画面の動画は白色・中サイズで、デスクトップの色やサイズの設定は自動では反映されません。
+- 色とサイズの設定は有効なロック画面にも反映されます。動画をバックグラウンドで生成するため、反映まで少し時間がかかります。表示開始のタイミングは macOS にも左右されます。
 - Sparkle 2 が更新を自動的に確認・インストールし、更新ファイルを EdDSA 署名で検証します。
 - ロック画面ヘルパーは GPL-3.0 の [Motion Wallpaper](https://github.com/krol44/MotionWallpaper) を基にしています。変更したソースとライセンスは `Lock Screen Helper Source` に収録しています。Sparkle のライセンスはそのダウンロードに含まれます。
 
@@ -85,7 +85,7 @@ Bot Wallpaper 是一款 macOS 菜单栏应用，可选择动态角色壁纸的�
 
 - 提供适用于 Apple Silicon 和 Intel Mac 的通用构建，需要 macOS 13 或更高版本。动态锁屏功能需要 macOS 26 或更高版本。
 - 锁屏功能使用 Apple 航拍视频槽位，而非 macOS 公开 API。应用前会备份原视频及设置，关闭功能时恢复。macOS 更新后行为可能变化。
-- 锁屏视频固定为白色、中等大小，不会自动跟随桌面的颜色和大小设置。
+- 启用锁屏时，颜色和大小设置也会应用于锁屏。视频在后台重新生成，可能需要一些时间；动画开始时机还取决于 macOS。
 - Sparkle 2 自动检查并安装更新，使用 EdDSA 签名验证更新文件。
 - 锁屏辅助程序基于 GPL-3.0 许可的 [Motion Wallpaper](https://github.com/krol44/MotionWallpaper)。修改后的源代码和许可证位于 `Lock Screen Helper Source`；Sparkle 的许可证包含在其下载文件中。
 
@@ -111,7 +111,7 @@ Bot Wallpaper는 움직이는 캐릭터 배경화면의 색상과 크기를 메�
 
 - Apple Silicon과 Intel용 범용 빌드이며 macOS 13 이상이 필요합니다. 움직이는 잠금화면은 macOS 26 이상에서 사용할 수 있습니다.
 - 잠금화면에는 공개 API가 아닌 Apple 풍경 영상 슬롯을 사용합니다. 적용 전에 기존 영상과 설정을 백업하고 해제할 때 복원합니다. macOS 업데이트 후 동작이 달라질 수 있습니다.
-- 잠금화면 영상은 흰색·중간 크기이며, 바탕화면에서 선택한 색상과 크기는 자동으로 반영되지 않습니다.
+- 잠금화면이 켜져 있으면 색상과 크기 설정도 함께 반영됩니다. 영상이 백그라운드에서 다시 만들어지므로 적용까지 시간이 조금 걸릴 수 있습니다. 잠금화면 전환은 macOS의 영향도 받습니다.
 - Sparkle 2가 업데이트를 자동으로 확인·설치하고, 업데이트 파일을 EdDSA 서명으로 검증합니다.
 - 잠금화면 도우미는 GPL-3.0인 [Motion Wallpaper](https://github.com/krol44/MotionWallpaper)를 기반으로 합니다. 수정된 소스와 라이선스는 `Lock Screen Helper Source`에 포함되어 있으며, Sparkle 라이선스는 프레임워크 다운로드에 포함됩니다.
 

@@ -204,11 +204,29 @@ final class MacOS26LockScreenInstaller {
         try saveState(State(slotFileName: slot.lastPathComponent, installedAt: Date()))
 
         let replacement = slot.deletingLastPathComponent().appendingPathComponent(".motionwallpaper-\(UUID().uuidString).mov")
-        try? fm.removeItem(at: replacement)
-        defer { try? fm.removeItem(at: replacement) }
+        let previous = slot.deletingLastPathComponent().appendingPathComponent(".motionwallpaper-previous-\(UUID().uuidString).mov")
+        var slotReplaced = false
+        var updateCompleted = false
+        var keepPreviousForRecovery = false
+        // A refresh must not destroy the current custom video if later steps fail.
+        if !firstInstall { try fm.copyItem(at: slot, to: previous) }
+        defer {
+            if slotReplaced && !updateCompleted && !firstInstall {
+                do {
+                    _ = try fm.replaceItemAt(slot, withItemAt: previous)
+                    reloadWallpaperRenderer()
+                } catch {
+                    keepPreviousForRecovery = true
+                    NSLog("MotionWallpaper: unable to restore the previous custom video; backup at %@: %@", previous.path, error.localizedDescription)
+                }
+            }
+            try? fm.removeItem(at: replacement)
+            if !keepPreviousForRecovery { try? fm.removeItem(at: previous) }
+        }
         try fm.copyItem(at: converted, to: replacement)
         try Task.checkCancellation()
         _ = try fm.replaceItemAt(slot, withItemAt: replacement)
+        slotReplaced = true
 
         let assetID = slot.deletingPathExtension().lastPathComponent
         try selectAerialAsset(assetID: assetID)
@@ -219,6 +237,7 @@ final class MacOS26LockScreenInstaller {
 
         try saveState(State(slotFileName: slot.lastPathComponent, installedAt: Date()))
         try writeReport(source: source, slot: slot, backup: backup, assetID: assetID, firstInstall: firstInstall)
+        updateCompleted = true
 
         return ResultInfo(
             sourceURL: source,

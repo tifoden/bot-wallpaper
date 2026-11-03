@@ -17,7 +17,10 @@ final class App: NSObject, NSApplicationDelegate {
     var sessionActive = true
     var displayAwake = true
     var lockEnabled = false
-    let lockMediaRevision = 2
+    let lockMediaRevision = 3
+    var lockUpdatePending = false
+    var lockUpdatingEnable = false
+    var lockRefreshGeneration = 0
     var desktopCheck: NSButton!
     var lockCheck: NSButton!
     static let translations: [String: [String]] = [
@@ -265,6 +268,7 @@ final class App: NSObject, NSApplicationDelegate {
         }
         if (previous == 0xFFFFFF) != (value == 0xFFFFFF) { reconfigureVideoPlayers() }
         if paused { updatePausedImage() }
+        if previous != value { queueLockRefresh() }
         status.menu?.cancelTracking()
     }
     @objc func toggleDesktop(_ sender: NSButton) {
@@ -309,12 +313,24 @@ final class App: NSObject, NSApplicationDelegate {
     @objc func sessionRestored() { sessionActive = true; refreshFrontApplication(); updatePlayback() }
     @objc func displaysAsleep() { displayAwake = false; updatePlayback() }
     @objc func displaysAwake() { displayAwake = true; refreshFrontApplication(); updatePlayback() }
+    func queueLockRefresh() {
+        guard lockEnabled || lockUpdatingEnable else { return }
+        lockUpdatePending = true
+        lockRefreshGeneration += 1
+        let generation = lockRefreshGeneration
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { [weak self] in
+            guard let self = self, self.lockRefreshGeneration == generation,
+                  self.lockUpdatePending, self.lockEnabled, self.lockCheck.isEnabled else { return }
+            self.lockUpdatePending = false
+            self.lockCheck.state = .on
+            self.toggleLock(self.lockCheck)
+        }
+    }
     @objc func toggleLock(_ sender: NSButton) {
         let enable = sender.state == .on
         let helper = Bundle.main.bundleURL.appendingPathComponent("Contents/Helpers/lock-helper")
         guard FileManager.default.isExecutableFile(atPath: helper.path),
-              let source = Bundle.main.url(forResource: "Lock Screen Source", withExtension: "mp4"),
-              let prepared = Bundle.main.url(forResource: "Lock Screen Prepared", withExtension: "mov") else {
+              let source = Bundle.main.url(forResource: "Lock Screen Source", withExtension: "mp4") else {
             sender.state = lockEnabled ? .on : .off
             return
         }
@@ -323,11 +339,14 @@ final class App: NSObject, NSApplicationDelegate {
             UserDefaults.standard.set(paths, forKey: "originalWallpaperPaths")
         }
         sender.isEnabled = false
+        lockUpdatingEnable = enable
+        let requestedColor = selectedColor
+        let requestedSize = selectedSize
         status.menu?.cancelTracking()
         DispatchQueue.global(qos: .userInitiated).async {
             let process = Process()
             process.executableURL = helper
-            process.arguments = enable ? ["install", source.path, prepared.path] : ["restore"]
+            process.arguments = enable ? ["install-custom", source.path, String(requestedColor), String(requestedSize)] : ["restore"]
             let errors = Pipe(); process.standardError = errors
             do {
                 try process.run(); process.waitUntilExit()
@@ -336,6 +355,7 @@ final class App: NSObject, NSApplicationDelegate {
                 DispatchQueue.main.async { [weak self] in
                     guard let self = self else { return }
                     self.lockCheck.isEnabled = true
+                    self.lockUpdatingEnable = false
                     if ok {
                         self.lockEnabled = enable
                         UserDefaults.standard.set(enable, forKey: "lockEnabled")
@@ -343,7 +363,10 @@ final class App: NSObject, NSApplicationDelegate {
                         else { UserDefaults.standard.removeObject(forKey: "lockMediaRevision") }
                         self.lockCheck.state = enable ? .on : .off
                         self.updateDesktopVisibility()
+                        if self.lockUpdatePending && enable { self.queueLockRefresh() }
+                        else if !enable { self.lockUpdatePending = false }
                     } else {
+                        self.lockUpdatePending = false
                         self.lockCheck.state = self.lockEnabled ? .on : .off
                         let alert = NSAlert(); alert.messageText = "Lock screen could not be updated"; alert.informativeText = detail
                         NSApp.activate(ignoringOtherApps: true); alert.runModal()
@@ -353,6 +376,7 @@ final class App: NSObject, NSApplicationDelegate {
                 let detail = error.localizedDescription
                 DispatchQueue.main.async { [weak self] in
                     guard let self = self else { return }
+                    self.lockUpdatingEnable = false; self.lockUpdatePending = false
                     self.lockCheck.isEnabled = true; self.lockCheck.state = self.lockEnabled ? .on : .off
                     let alert = NSAlert(); alert.messageText = "Lock screen could not be updated"; alert.informativeText = detail
                     NSApp.activate(ignoringOtherApps: true); alert.runModal()
@@ -362,10 +386,12 @@ final class App: NSObject, NSApplicationDelegate {
     }
     @objc func selectSize(_ sender: NSButton) {
         guard sizeNames.indices.contains(sender.tag) else { return }
+        let previousSize = selectedSize
         selectedSize = sender.tag
         UserDefaults.standard.set(selectedSize, forKey: "characterSize")
         for (index, button) in sizeButtons.enumerated() { button.state = index == selectedSize ? .on : .off }
         applySize()
+        if previousSize != selectedSize { queueLockRefresh() }
         status.menu?.cancelTracking()
     }
     func applySize() {
