@@ -1,36 +1,35 @@
-# Bot Wallpaper — 배포 준비
+# Bot Wallpaper
 
-macOS 메뉴 막대에서 캐릭터 배경화면의 색상과 크기를 선택하는 앱입니다. GitHub Releases에서 다운로드할 수 있습니다.
+[English](#english) · [日本語](#日本語) · [简体中文](#简体中文) · [한국어](#한국어)
 
-## 다운로드 및 설치
+## English
 
-[최신 버전 다운로드](https://github.com/tifoden/bot-wallpaper/releases/latest) 후 압축을 풀고 `Bot Wallpaper.app`을 **응용 프로그램** 폴더에 옮겨 실행합니다. 실행 후 메뉴 막대 아이콘에서 설정할 수 있습니다. 이미 이전 개인용 버전을 실행 중이라면 먼저 종료해 주세요.
+Bot Wallpaper is a macOS menu bar app for choosing the color and size of an animated character wallpaper.
 
-## 기능과 제한
+### Download and installation
 
-- Apple Silicon과 Intel용 범용 빌드, macOS 13 이상. 움직이는 잠금화면은 macOS 26 이상에서만 활성화됩니다.
-- 잠금화면은 macOS의 공개 API가 아닌 Apple 풍경 영상 슬롯을 사용합니다. 적용 전 기존 설정과 영상을 백업하고 해제할 때 복원합니다. macOS 업데이트에 따라 작동이 달라질 수 있습니다.
-- 잠금화면 영상은 흰색·중간 크기이고, 바탕화면에서 선택한 색상이나 크기를 자동으로 따르지 않습니다.
-- Sparkle 2를 사용해 자동으로 업데이트를 확인하고 설치합니다. 업데이트 압축 파일을 EdDSA로 검증합니다.
-- 봇 영상과 아바타는 xAI 페이지에서 유래합니다. 공개 배포 전에 원본 사용 권한과 제품 이름·아이콘에 대한 [xAI 브랜드 지침](https://x.ai/legal/brand-guidelines)을 확인해야 합니다.
-- 잠금화면 도우미는 GPL-3.0인 [Motion Wallpaper](https://github.com/krol44/MotionWallpaper)를 기반으로 합니다. 수정된 도우미 소스와 라이선스를 `Lock Screen Helper Source`에 포함했습니다. Sparkle 라이선스는 프레임워크 다운로드에 포함됩니다.
+Download the ZIP from the [latest release](https://github.com/tifoden/bot-wallpaper/releases/latest), unzip it, and move `Bot Wallpaper.app` to **Applications** before opening it. Use its menu bar icon to change settings. If you are running an earlier personal version, quit it first.
 
-## 로컬 빌드
+### Features and limitations
 
-1. Xcode 명령줄 도구를 설치합니다.
-2. `scripts/bootstrap.sh`로 Sparkle 2.10.1을 내려받습니다. 스크립트는 SHA-256을 확인합니다.
-3. 실제 릴리스에 사용할 HTTPS appcast 주소를 지정해 빌드합니다.
+- Universal build for Apple Silicon and Intel Macs; macOS 13 or later. The animated lock screen option requires macOS 26 or later.
+- The lock screen option uses an Apple aerial video slot rather than a public macOS API. It backs up the existing video and settings before applying the wallpaper and restores them when disabled. Behavior may change after macOS updates.
+- The lock screen video is white and medium-sized; desktop color and size choices do not automatically apply to it.
+- Sparkle 2 automatically checks for and installs updates. Update archives are verified using EdDSA signatures.
+- The lock screen helper is based on [Motion Wallpaper](https://github.com/krol44/MotionWallpaper), licensed under GPL-3.0. Its modified source and license are in `Lock Screen Helper Source`; the Sparkle license is included with its download.
+
+### Building and releasing
+
+Install the Xcode command-line tools, then run `scripts/bootstrap.sh` to download Sparkle 2.10.1 with SHA-256 verification. Build and verify with an HTTPS appcast URL:
 
 ```sh
 FEED_URL='https://example.com/appcast.xml' scripts/build.sh
 scripts/verify-build.sh
 ```
 
-기본 빌드는 임시 폴더 `/tmp/bot-wallpaper-release-build`에 생성하며 로컬 시험용 서명입니다. 이 주소는 예시입니다. 사용자에게 배포할 빌드에는 실제 GitHub 주소가 필요합니다.
+The default output is `/tmp/bot-wallpaper-release-build`, signed locally for testing. The URL above is an example; a distributable build needs the real GitHub appcast URL.
 
-## 공증 및 릴리스 준비
-
-macOS Developer ID Application 인증서와 `notarytool` 키체인 프로필이 필요합니다. 인증 정보나 Sparkle 개인 키를 저장소에 넣지 마세요. 이 Mac의 Sparkle 키체인 계정은 `tifoden.bot-wallpaper`입니다. 이 키를 잃으면 기존 사용자에게 업데이트를 제공하는 데 문제가 생길 수 있으므로 안전하게 보관해야 합니다.
+To prepare a release, use a Developer ID Application certificate and a `notarytool` Keychain profile:
 
 ```sh
 GITHUB_REPOSITORY='owner/repository' \
@@ -40,8 +39,86 @@ NOTARY_PROFILE='profile-name' \
 scripts/release-local.sh
 ```
 
-이 스크립트는 Apple Developer ID 서명 → 공증 → 스테이플 → ZIP → 서명된 `appcast.xml`을 로컬에서 생성합니다. 자동으로 GitHub에 게시하지 않습니다. 결과를 확인한 다음 해당 버전 태그의 GitHub Release에 ZIP과 `appcast.xml`을 함께 올려야 합니다. 새 릴리스마다 `BUILD_NUMBER`를 증가시켜야 합니다. 각 릴리스를 올린 뒤 공개 다운로드 URL과 업데이트 피드가 정상적으로 열리는지 확인하세요.
+The script signs, notarizes and staples the app, then creates a ZIP and signed `appcast.xml` locally; it does not publish to GitHub. Review and upload both assets to the matching GitHub Release. Increase `BUILD_NUMBER` for each release, and verify the public download and feed URLs afterward. Keep credentials and Sparkle private keys out of the repository. The Sparkle Keychain account for this project is `tifoden.bot-wallpaper`; safeguard it because losing the key can affect updates for existing users.
 
-## 출처 및 비공식 프로젝트 안내
+### Attribution
 
-이 프로젝트는 개인이 만든 **비공식·비상업적** 프로젝트이며 SpaceXSI의 제작, 승인, 후원 또는 제휴를 받지 않았습니다. Grok 및 Grok Bot과 관련 상표·로고·캐릭터 등의 모든 관련 권리는 SpaceXSI에 있습니다. 출처와 권리 귀속을 명시하는 것은 그 자체로 원본 영상·아바타의 재배포 권한을 부여하지 않습니다.
+This is an **unofficial, non-commercial** independent project. It is not made, endorsed, sponsored, or affiliated with SpaceXSI. All rights to Grok, Grok Bot, and related trademarks, logos, and characters belong to SpaceXSI. The bot video and avatar originate from the xAI website. Attribution does not itself grant permission to redistribute them; review the [xAI brand guidelines](https://x.ai/legal/brand-guidelines).
+
+---
+
+## 日本語
+
+Bot Wallpaper は、動くキャラクター壁紙の色とサイズをメニューバーから選べる macOS アプリです。
+
+### ダウンロードとインストール
+
+[最新リリース](https://github.com/tifoden/bot-wallpaper/releases/latest)から ZIP をダウンロードして展開し、`Bot Wallpaper.app` を**アプリケーション**フォルダに移動してから開いてください。設定はメニューバーのアイコンから変更できます。以前の個人用バージョンを使用中の場合は、先に終了してください。
+
+### 機能と制限
+
+- Apple Silicon と Intel 向けのユニバーサルビルド。macOS 13 以降に対応し、動くロック画面には macOS 26 以降が必要です。
+- ロック画面には公開 API ではなく Apple の空撮動画スロットを使用します。適用前に既存の動画と設定をバックアップし、無効化時に復元します。macOS の更新により動作が変わる場合があります。
+- ロック画面の動画は白色・中サイズで、デスクトップの色やサイズの設定は自動では反映されません。
+- Sparkle 2 が更新を自動的に確認・インストールし、更新ファイルを EdDSA 署名で検証します。
+- ロック画面ヘルパーは GPL-3.0 の [Motion Wallpaper](https://github.com/krol44/MotionWallpaper) を基にしています。変更したソースとライセンスは `Lock Screen Helper Source` に収録しています。Sparkle のライセンスはそのダウンロードに含まれます。
+
+### ビルドとリリース
+
+Xcode コマンドラインツールをインストールし、`scripts/bootstrap.sh` で Sparkle 2.10.1 をダウンロードします。SHA-256 が検証されます。ビルドと公証のコマンドは[英語の手順](#building-and-releasing)を参照してください。リリースには Developer ID Application 証明書と `notarytool` のキーチェーンプロファイルが必要です。認証情報や Sparkle の秘密鍵をリポジトリに含めないでください。
+
+### 権利表記
+
+本アプリは独立した**非公式・非商用**プロジェクトであり、SpaceXSI による制作、承認、後援、提携を受けていません。Grok、Grok Bot および関連する商標・ロゴ・キャラクターのすべての権利は SpaceXSI に帰属します。動画とアバターは xAI のウェブサイトに由来します。出典表記だけで再配布の許可が得られるわけではありません。[xAI ブランドガイドライン](https://x.ai/legal/brand-guidelines)を確認してください。
+
+---
+
+## 简体中文
+
+Bot Wallpaper 是一款 macOS 菜单栏应用，可选择动态角色壁纸的颜色和大小。
+
+### 下载与安装
+
+从[最新版本](https://github.com/tifoden/bot-wallpaper/releases/latest)下载 ZIP 并解压，将 `Bot Wallpaper.app` 移到**应用程序**文件夹后打开。通过菜单栏图标调整设置。如果正在运行旧的个人版本，请先退出。
+
+### 功能与限制
+
+- 提供适用于 Apple Silicon 和 Intel Mac 的通用构建，需要 macOS 13 或更高版本。动态锁屏功能需要 macOS 26 或更高版本。
+- 锁屏功能使用 Apple 航拍视频槽位，而非 macOS 公开 API。应用前会备份原视频及设置，关闭功能时恢复。macOS 更新后行为可能变化。
+- 锁屏视频固定为白色、中等大小，不会自动跟随桌面的颜色和大小设置。
+- Sparkle 2 自动检查并安装更新，使用 EdDSA 签名验证更新文件。
+- 锁屏辅助程序基于 GPL-3.0 许可的 [Motion Wallpaper](https://github.com/krol44/MotionWallpaper)。修改后的源代码和许可证位于 `Lock Screen Helper Source`；Sparkle 的许可证包含在其下载文件中。
+
+### 构建与发布
+
+安装 Xcode 命令行工具后，运行 `scripts/bootstrap.sh` 下载 Sparkle 2.10.1，脚本会验证 SHA-256。构建和公证命令见[英文说明](#building-and-releasing)。发布需要 Developer ID Application 证书和 `notarytool` 钥匙串配置；请勿将凭据或 Sparkle 私钥提交到仓库。
+
+### 权利声明
+
+本项目是独立的**非官方、非商业**项目，不由 SpaceXSI 制作、认可、赞助或与其关联。Grok、Grok Bot 及相关商标、标志和角色的所有权利归 SpaceXSI 所有。视频和头像来自 xAI 网站。标明来源本身并不授予再分发权限；请查看 [xAI 品牌指南](https://x.ai/legal/brand-guidelines)。
+
+---
+
+## 한국어
+
+Bot Wallpaper는 움직이는 캐릭터 배경화면의 색상과 크기를 메뉴 막대에서 선택할 수 있는 macOS 앱입니다.
+
+### 다운로드 및 설치
+
+[최신 릴리스](https://github.com/tifoden/bot-wallpaper/releases/latest)에서 ZIP을 내려받아 압축을 풀고, `Bot Wallpaper.app`을 **응용 프로그램** 폴더로 옮겨 실행합니다. 메뉴 막대 아이콘에서 설정을 바꿀 수 있습니다. 이전 개인용 버전을 실행 중이라면 먼저 종료해 주세요.
+
+### 기능과 제한
+
+- Apple Silicon과 Intel용 범용 빌드이며 macOS 13 이상이 필요합니다. 움직이는 잠금화면은 macOS 26 이상에서 사용할 수 있습니다.
+- 잠금화면에는 공개 API가 아닌 Apple 풍경 영상 슬롯을 사용합니다. 적용 전에 기존 영상과 설정을 백업하고 해제할 때 복원합니다. macOS 업데이트 후 동작이 달라질 수 있습니다.
+- 잠금화면 영상은 흰색·중간 크기이며, 바탕화면에서 선택한 색상과 크기는 자동으로 반영되지 않습니다.
+- Sparkle 2가 업데이트를 자동으로 확인·설치하고, 업데이트 파일을 EdDSA 서명으로 검증합니다.
+- 잠금화면 도우미는 GPL-3.0인 [Motion Wallpaper](https://github.com/krol44/MotionWallpaper)를 기반으로 합니다. 수정된 소스와 라이선스는 `Lock Screen Helper Source`에 포함되어 있으며, Sparkle 라이선스는 프레임워크 다운로드에 포함됩니다.
+
+### 빌드 및 릴리스
+
+Xcode 명령줄 도구를 설치한 뒤 `scripts/bootstrap.sh`를 실행하면 Sparkle 2.10.1을 다운로드하고 SHA-256을 확인합니다. 빌드와 공증 명령은 [영어 안내](#building-and-releasing)를 참고해 주세요. 릴리스에는 Developer ID Application 인증서와 `notarytool` 키체인 프로필이 필요합니다. 인증 정보나 Sparkle 개인 키를 저장소에 넣지 마세요.
+
+### 권리 안내
+
+이 프로젝트는 독립적인 **비공식·비상업적** 프로젝트이며, SpaceXSI의 제작·승인·후원 또는 제휴를 받지 않았습니다. Grok, Grok Bot 및 관련 상표·로고·캐릭터의 모든 권리는 SpaceXSI에 있습니다. 봇 영상과 아바타는 xAI 웹사이트에서 유래합니다. 출처 표기 자체가 재배포 권한을 부여하지는 않으므로 [xAI 브랜드 지침](https://x.ai/legal/brand-guidelines)을 확인해 주세요.
