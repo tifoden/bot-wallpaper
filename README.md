@@ -1,6 +1,10 @@
 # Bot Wallpaper — 배포 준비
 
-macOS 메뉴 막대에서 캐릭터 배경화면의 색상과 크기를 선택하는 앱입니다. 첫 다운로드 릴리스와 자동 업데이트 배포를 준비하고 있습니다.
+macOS 메뉴 막대에서 캐릭터 배경화면의 색상과 크기를 선택하는 앱입니다. GitHub Releases에서 다운로드할 수 있습니다.
+
+## 다운로드 및 설치
+
+[최신 버전 다운로드](https://github.com/tifoden/bot-wallpaper/releases/latest/download/Bot-Wallpaper-1.0.0.zip) 후 압축을 풀고 `Bot Wallpaper.app`을 **응용 프로그램** 폴더에 옮겨 실행합니다. 실행 후 메뉴 막대 아이콘에서 설정할 수 있습니다. 이미 이전 개인용 버전을 실행 중이라면 먼저 종료해 주세요.
 
 ## 기능과 제한
 
@@ -36,7 +40,7 @@ NOTARY_PROFILE='profile-name' \
 scripts/release-local.sh
 ```
 
-이 스크립트는 Apple Developer ID 서명 → 공증 → 스테이플 → ZIP → 서명된 `appcast.xml`을 로컬에서 생성합니다. 자동으로 GitHub에 게시하지 않습니다. 결과를 확인한 다음 해당 버전 태그의 GitHub Release에 ZIP과 `appcast.xml`을 함께 올려야 합니다. 새 릴리스마다 `BUILD_NUMBER`를 증가시켜야 합니다. 실제 릴리스 업로드와 업데이트 수신은 아직 테스트하지 않았습니다.
+이 스크립트는 Apple Developer ID 서명 → 공증 → 스테이플 → ZIP → 서명된 `appcast.xml`을 로컬에서 생성합니다. 자동으로 GitHub에 게시하지 않습니다. 결과를 확인한 다음 해당 버전 태그의 GitHub Release에 ZIP과 `appcast.xml`을 함께 올려야 합니다. 새 릴리스마다 `BUILD_NUMBER`를 증가시켜야 합니다. 각 릴리스를 올린 뒤 공개 다운로드 URL과 업데이트 피드가 정상적으로 열리는지 확인하세요.
 
 ## 출처 및 비공식 프로젝트 안내
 
