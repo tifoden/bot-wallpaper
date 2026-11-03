@@ -4,7 +4,7 @@ macOS 메뉴 막대에서 캐릭터 배경화면의 색상과 크기를 선택�
 
 ## 다운로드 및 설치
 
-[최신 버전 다운로드](https://github.com/tifoden/bot-wallpaper/releases/latest/download/Bot-Wallpaper-1.0.0.zip) 후 압축을 풀고 `Bot Wallpaper.app`을 **응용 프로그램** 폴더에 옮겨 실행합니다. 실행 후 메뉴 막대 아이콘에서 설정할 수 있습니다. 이미 이전 개인용 버전을 실행 중이라면 먼저 종료해 주세요.
+[최신 버전 다운로드](https://github.com/tifoden/bot-wallpaper/releases/latest) 후 압축을 풀고 `Bot Wallpaper.app`을 **응용 프로그램** 폴더에 옮겨 실행합니다. 실행 후 메뉴 막대 아이콘에서 설정할 수 있습니다. 이미 이전 개인용 버전을 실행 중이라면 먼저 종료해 주세요.
 
 ## 기능과 제한
 
