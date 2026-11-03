@@ -69,7 +69,7 @@ final class App: NSObject, NSApplicationDelegate {
     var sizeButtons: [NSButton] = []
     var selectedSize = 1
     let imageContext = CIContext()
-    let updaterController = SPUStandardUpdaterController(startingUpdater: true, updaterDelegate: nil, userDriverDelegate: nil)
+    lazy var updaterController = SPUStandardUpdaterController(startingUpdater: true, updaterDelegate: nil, userDriverDelegate: nil)
     var status: NSStatusItem!
     var pauseLabel: NSTextField!
     var pauseButton: NSButton!
@@ -103,6 +103,10 @@ final class App: NSObject, NSApplicationDelegate {
     }
     func applicationDidFinishLaunching(_ notification: Notification) {
         NSApp.setActivationPolicy(.accessory)
+        if AppInstaller.offerInstallation(onOpenFailure: { [weak self] in self?.startWallpaper() }) { return }
+        startWallpaper()
+    }
+    func startWallpaper() {
         if let saved = UserDefaults.standard.object(forKey: "characterColor") as? NSNumber {
             let value = saved.uint32Value
             if colors.contains(where: { $0.1 == value }) { selectedColor = value }
@@ -518,7 +522,12 @@ final class App: NSObject, NSApplicationDelegate {
         updateDesktopVisibility()
     }
 }
-let app = NSApplication.shared
-let delegate = App()
-app.delegate = delegate
-app.run()
+@main
+struct Main {
+    static func main() {
+        let app = NSApplication.shared
+        let delegate = App()
+        app.delegate = delegate
+        app.run()
+    }
+}

@@ -32,6 +32,8 @@ else
 fi
 TMP="$(mktemp -d -t bot-wallpaper-verify)"
 trap 'rm -rf "$TMP"' EXIT
+xcrun swiftc "$PROJECT_DIR/src/AppInstaller.swift" "$PROJECT_DIR/tests/install_prompt.swift" -o "$TMP/install-prompt-tests"
+"$TMP/install-prompt-tests"
 ditto -c -k --sequesterRsrc --keepParent "$APP" "$TMP/update.zip"
 SIGNER="$PROJECT_DIR/vendor/bin/sign_update"
 SIG="$("$SIGNER" --account tifoden.bot-wallpaper -p "$TMP/update.zip")"

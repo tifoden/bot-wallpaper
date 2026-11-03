@@ -8,7 +8,7 @@ Bot Wallpaper is a macOS menu bar app for choosing the color and size of an anim
 
 ### Download and installation
 
-Download the ZIP from the [latest release](https://github.com/tifoden/bot-wallpaper/releases/latest), unzip it, and move `Bot Wallpaper.app` to **Applications** before opening it. Use its menu bar icon to change settings. If you are running an earlier personal version, quit it first.
+Download the ZIP from the [latest release](https://github.com/tifoden/bot-wallpaper/releases/latest), unzip it, and open `Bot Wallpaper.app`. If it is outside **Applications**, the app offers to copy itself there and reopen. You can also move it there yourself before opening it. Use its menu bar icon to change settings. If you are running an earlier personal version, quit it first.
 
 ### Features and limitations
 
@@ -53,7 +53,7 @@ Bot Wallpaper は、動くキャラクター壁紙の色とサイズをメニュ
 
 ### ダウンロードとインストール
 
-[最新リリース](https://github.com/tifoden/bot-wallpaper/releases/latest)から ZIP をダウンロードして展開し、`Bot Wallpaper.app` を**アプリケーション**フォルダに移動してから開いてください。設定はメニューバーのアイコンから変更できます。以前の個人用バージョンを使用中の場合は、先に終了してください。
+[最新リリース](https://github.com/tifoden/bot-wallpaper/releases/latest)から ZIP をダウンロードして展開し、`Bot Wallpaper.app` を開いてください。**アプリケーション**フォルダの外から開くと、コピーして開き直すか確認されます。先に手動で移動することもできます。設定はメニューバーのアイコンから変更できます。以前の個人用バージョンを使用中の場合は、先に終了してください。
 
 ### 機能と制限
 
@@ -79,7 +79,7 @@ Bot Wallpaper 是一款 macOS 菜单栏应用，可选择动态角色壁纸的�
 
 ### 下载与安装
 
-从[最新版本](https://github.com/tifoden/bot-wallpaper/releases/latest)下载 ZIP 并解压，将 `Bot Wallpaper.app` 移到**应用程序**文件夹后打开。通过菜单栏图标调整设置。如果正在运行旧的个人版本，请先退出。
+从[最新版本](https://github.com/tifoden/bot-wallpaper/releases/latest)下载 ZIP 并解压，然后打开 `Bot Wallpaper.app`。如果应用不在**应用程序**文件夹内，会提示复制到该文件夹并重新打开；也可以先手动移动。通过菜单栏图标调整设置。如果正在运行旧的个人版本，请先退出。
 
 ### 功能与限制
 
@@ -105,7 +105,7 @@ Bot Wallpaper는 움직이는 캐릭터 배경화면의 색상과 크기를 메�
 
 ### 다운로드 및 설치
 
-[최신 릴리스](https://github.com/tifoden/bot-wallpaper/releases/latest)에서 ZIP을 내려받아 압축을 풀고, `Bot Wallpaper.app`을 **응용 프로그램** 폴더로 옮겨 실행합니다. 메뉴 막대 아이콘에서 설정을 바꿀 수 있습니다. 이전 개인용 버전을 실행 중이라면 먼저 종료해 주세요.
+[최신 릴리스](https://github.com/tifoden/bot-wallpaper/releases/latest)에서 ZIP을 내려받아 압축을 풀고 `Bot Wallpaper.app`을 실행합니다. **응용 프로그램** 폴더 밖에서 실행하면 해당 폴더에 복사하고 다시 열지 묻습니다. 실행 전에 직접 옮겨도 됩니다. 메뉴 막대 아이콘에서 설정을 바꿀 수 있습니다. 이전 개인용 버전을 실행 중이라면 먼저 종료해 주세요.
 
 ### 기능과 제한
 
