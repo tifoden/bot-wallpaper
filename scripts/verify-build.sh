@@ -5,6 +5,9 @@ APP="${BUILD_DIR:-/tmp/bot-wallpaper-release-build}/Bot Wallpaper.app"
 PLIST="$APP/Contents/Info.plist"
 test -d "$APP"
 plutil -lint "$PLIST"
+ICON_FILE="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIconFile' "$PLIST")"
+test "$ICON_FILE" = 'AppIcon'
+test -s "$APP/Contents/Resources/AppIcon.icns"
 codesign --verify --deep --strict --verbose=2 "$APP"
 for binary in "$APP/Contents/MacOS/Bot Wallpaper" "$APP/Contents/Helpers/lock-helper"; do
   ARCHS="$(lipo -archs "$binary")"

@@ -27,7 +27,7 @@ lipo -create "$BUILD_DIR/objects/lock-arm64" "$BUILD_DIR/objects/lock-x86_64" -o
 /usr/bin/python3 - "$APP/Contents/Info.plist" "$FEED_URL" "$VERSION" "$BUILD_NUMBER" "$PUBLIC_KEY" <<'PY'
 import plistlib,sys
 out,feed,version,build,key=sys.argv[1:]
-data={'CFBundleName':'Bot Wallpaper','CFBundleDisplayName':'Bot Wallpaper','CFBundleExecutable':'Bot Wallpaper','CFBundleIdentifier':'com.tifoden.botwallpaper','CFBundlePackageType':'APPL','CFBundleShortVersionString':version,'CFBundleVersion':build,'LSMinimumSystemVersion':'13.0','LSUIElement':True,'NSHighResolutionCapable':True,'SUFeedURL':feed,'SUPublicEDKey':key,'SUEnableAutomaticChecks':True,'SUAutomaticallyUpdate':True}
+data={'CFBundleName':'Bot Wallpaper','CFBundleDisplayName':'Bot Wallpaper','CFBundleIconFile':'AppIcon','CFBundleExecutable':'Bot Wallpaper','CFBundleIdentifier':'com.tifoden.botwallpaper','CFBundlePackageType':'APPL','CFBundleShortVersionString':version,'CFBundleVersion':build,'LSMinimumSystemVersion':'13.0','LSUIElement':True,'NSHighResolutionCapable':True,'SUFeedURL':feed,'SUPublicEDKey':key,'SUEnableAutomaticChecks':True,'SUAutomaticallyUpdate':True}
 with open(out,'wb') as f: plistlib.dump(data,f)
 PY
 xattr -cr "$APP"
