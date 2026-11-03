@@ -7,6 +7,7 @@ final class App: NSObject, NSApplicationDelegate {
     var windows: [NSWindow] = []
     var players: [AVQueuePlayer] = []
     var loopers: [AVPlayerLooper] = []
+    var playbackGeneration = 0
     var stillLayers: [CALayer] = []
     var videoLayers: [AVPlayerLayer] = []
     var contentViews: [NSView] = []
@@ -16,6 +17,7 @@ final class App: NSObject, NSApplicationDelegate {
     var sessionActive = true
     var displayAwake = true
     var lockEnabled = false
+    let lockMediaRevision = 2
     var desktopCheck: NSButton!
     var lockCheck: NSButton!
     static let translations: [String: [String]] = [
@@ -199,6 +201,13 @@ final class App: NSObject, NSApplicationDelegate {
         events.addObserver(self, selector: #selector(displaysAwake), name: NSWorkspace.screensDidWakeNotification, object: nil)
         refreshFrontApplication()
         setup()
+        if lockEnabled && UserDefaults.standard.integer(forKey: "lockMediaRevision") != lockMediaRevision {
+            DispatchQueue.main.async { [weak self] in
+                guard let self = self, self.lockEnabled, self.lockCheck.isEnabled else { return }
+                self.lockCheck.state = .on
+                self.toggleLock(self.lockCheck)
+            }
+        }
         NotificationCenter.default.addObserver(self, selector: #selector(screensChanged), name: NSApplication.didChangeScreenParametersNotification, object: nil)
     }
     func menuRow(title: String, symbol: String, action: Selector) -> NSMenuItem {
@@ -245,11 +254,12 @@ final class App: NSObject, NSApplicationDelegate {
     @objc func selectColor(_ sender: NSButton) {
         guard colors.indices.contains(sender.tag) else { return }
         let value = colors[sender.tag].1
-        colorLock.lock(); selectedColor = value; colorLock.unlock()
+        colorLock.lock(); let previous = selectedColor; selectedColor = value; colorLock.unlock()
         UserDefaults.standard.set(NSNumber(value: value), forKey: "characterColor")
         for (i, button) in colorButtons.enumerated() {
             button.image = swatch(colors[i].1, selected: i == sender.tag)
         }
+        if (previous == 0xFFFFFF) != (value == 0xFFFFFF) { reconfigureVideoPlayers() }
         if paused { updatePausedImage() }
         status.menu?.cancelTracking()
     }
@@ -304,7 +314,7 @@ final class App: NSObject, NSApplicationDelegate {
             sender.state = lockEnabled ? .on : .off
             return
         }
-        if enable {
+        if enable && !lockEnabled {
             let paths = NSScreen.screens.map { NSWorkspace.shared.desktopImageURL(for: $0)?.path ?? "" }
             UserDefaults.standard.set(paths, forKey: "originalWallpaperPaths")
         }
@@ -325,6 +335,8 @@ final class App: NSObject, NSApplicationDelegate {
                     if ok {
                         self.lockEnabled = enable
                         UserDefaults.standard.set(enable, forKey: "lockEnabled")
+                        if enable { UserDefaults.standard.set(self.lockMediaRevision, forKey: "lockMediaRevision") }
+                        else { UserDefaults.standard.removeObject(forKey: "lockMediaRevision") }
                         self.lockCheck.state = enable ? .on : .off
                         self.updateDesktopVisibility()
                     } else {
@@ -409,7 +421,49 @@ final class App: NSObject, NSApplicationDelegate {
     }
     @objc func quit() { status.menu?.cancelTracking(); NSApp.terminate(nil) }
     @objc func screensChanged() { setup() }
+    func makePlayerItem(url: URL, filtered: Bool) -> AVPlayerItem {
+        let asset = AVURLAsset(url: url)
+        let item = AVPlayerItem(asset: asset)
+        guard filtered else { return item }
+        item.videoComposition = AVVideoComposition(asset: asset, applyingCIFiltersWithHandler: { [weak self] request in
+            guard let self = self else { request.finish(with: request.sourceImage, context: nil); return }
+            self.colorLock.lock(); let value = self.selectedColor; self.colorLock.unlock()
+            if value == self.outlineValue {
+                request.finish(with: self.outlineImage(request.sourceImage), context: nil); return
+            }
+            guard value != 0xFFFFFF, let kernel = self.recolorKernel else {
+                request.finish(with: request.sourceImage, context: nil); return
+            }
+            let tint = CIVector(x: self.linear((value >> 16) & 255), y: self.linear((value >> 8) & 255), z: self.linear(value & 255))
+            let output = kernel.apply(extent: request.sourceImage.extent, arguments: [request.sourceImage, tint]) ?? request.sourceImage
+            request.finish(with: output, context: nil)
+        })
+        return item
+    }
+    func reconfigureVideoPlayers() {
+        guard let url = Bundle.main.url(forResource: "Grok Bot", withExtension: "mp4") else { return }
+        playbackGeneration += 1
+        let generation = playbackGeneration
+        colorLock.lock(); let filtered = selectedColor != 0xFFFFFF; colorLock.unlock()
+        for index in players.indices {
+            let player = players[index]
+            let current = player.currentTime()
+            let position = current.isNumeric && current.seconds >= 0 ? current : .zero
+            player.pause()
+            loopers[index].disableLooping()
+            player.removeAllItems()
+            loopers[index] = AVPlayerLooper(player: player, templateItem: makePlayerItem(url: url, filtered: filtered))
+            player.seek(to: position, toleranceBefore: .zero, toleranceAfter: .zero) { [weak self, weak player] _ in
+                DispatchQueue.main.async {
+                    guard let self = self, let player = player, self.playbackGeneration == generation,
+                          self.players.contains(where: { $0 === player }) else { return }
+                    self.updatePlayback()
+                }
+            }
+        }
+    }
     func setup() {
+        playbackGeneration += 1
         windows.forEach { $0.close() }; windows.removeAll(); players.removeAll(); loopers.removeAll(); stillLayers.removeAll(); videoLayers.removeAll(); contentViews.removeAll(); originalLayers.removeAll()
         guard let url = Bundle.main.url(forResource: "Grok Bot", withExtension: "mp4") else { return }
         let savedPaths = UserDefaults.standard.stringArray(forKey: "originalWallpaperPaths") ?? []
@@ -438,22 +492,8 @@ final class App: NSObject, NSApplicationDelegate {
             let player = AVQueuePlayer()
             player.isMuted = true
             player.automaticallyWaitsToMinimizeStalling = false
-            let asset = AVURLAsset(url: url)
-            let item = AVPlayerItem(asset: asset)
-            let composition = AVVideoComposition(asset: asset, applyingCIFiltersWithHandler: { [weak self] request in
-                guard let self = self else { request.finish(with: request.sourceImage, context: nil); return }
-                self.colorLock.lock(); let value = self.selectedColor; self.colorLock.unlock()
-                if value == self.outlineValue {
-                    request.finish(with: self.outlineImage(request.sourceImage), context: nil); return
-                }
-                guard value != 0xFFFFFF, let kernel = self.recolorKernel else {
-                    request.finish(with: request.sourceImage, context: nil); return
-                }
-                let tint = CIVector(x: self.linear((value >> 16) & 255), y: self.linear((value >> 8) & 255), z: self.linear(value & 255))
-                let output = kernel.apply(extent: request.sourceImage.extent, arguments: [request.sourceImage, tint]) ?? request.sourceImage
-                request.finish(with: output, context: nil)
-            })
-            item.videoComposition = composition
+            colorLock.lock(); let filtered = selectedColor != 0xFFFFFF; colorLock.unlock()
+            let item = makePlayerItem(url: url, filtered: filtered)
             let looper = AVPlayerLooper(player: player, templateItem: item)
             let layer = AVPlayerLayer(player: player)
             layer.videoGravity = .resizeAspectFill

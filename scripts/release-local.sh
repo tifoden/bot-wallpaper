@@ -10,6 +10,7 @@ if [[ ! "$GITHUB_REPOSITORY" =~ ^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$ ]]; then echo 
 if [[ ! "$VERSION" =~ ^[0-9]+(\.[0-9]+){1,2}$ || ! "$BUILD_NUMBER" =~ ^[0-9]+$ ]]; then echo 'Invalid version/build' >&2; exit 1; fi
 export FEED_URL="https://github.com/$GITHUB_REPOSITORY/releases/latest/download/appcast.xml"
 "$PROJECT_DIR/scripts/build.sh"
+"$PROJECT_DIR/scripts/verify-build.sh"
 APP="${BUILD_DIR:-/tmp/bot-wallpaper-release-build}/Bot Wallpaper.app"
 OUT="${RELEASE_DIR:-$PROJECT_DIR/release}"
 mkdir -p "$OUT"

@@ -10,8 +10,22 @@ for binary in "$APP/Contents/MacOS/Bot Wallpaper" "$APP/Contents/Helpers/lock-he
   ARCHS="$(lipo -archs "$binary")"
   [[ " $ARCHS " == *' arm64 '* && " $ARCHS " == *' x86_64 '* ]]
 done
-if rg -n "/Users/${USER}/|/tmp/bot-wallpaper" "$PROJECT_DIR/src" "$PROJECT_DIR/Lock Screen Helper Source" -g '*.swift'; then
-  echo 'Found machine-specific paths' >&2; exit 1
+/usr/bin/python3 - "$PROJECT_DIR" <<'PYTHON'
+import os, pathlib, sys
+root = pathlib.Path(sys.argv[1])
+needles = (f"/Users/{os.environ.get('USER', '')}/", "/tmp/bot-wallpaper")
+for directory in (root / "src", root / "Lock Screen Helper Source"):
+    for path in directory.rglob("*.swift"):
+        content = path.read_text()
+        if any(needle in content for needle in needles):
+            raise SystemExit(f"Found a machine-specific path in {path}")
+PYTHON
+if command -v ffmpeg >/dev/null && command -v ffprobe >/dev/null; then
+  python3 "$PROJECT_DIR/tests/check_loop.py" "$PROJECT_DIR/resources/Grok Bot.mp4"
+  python3 "$PROJECT_DIR/tests/check_loop.py" "$PROJECT_DIR/resources/Lock Screen Source.mp4"
+  python3 "$PROJECT_DIR/tests/check_loop.py" "$PROJECT_DIR/resources/Lock Screen Prepared.mov"
+else
+  echo 'Loop checks skipped: ffmpeg and ffprobe are not installed.'
 fi
 TMP="$(mktemp -d -t bot-wallpaper-verify)"
 trap 'rm -rf "$TMP"' EXIT
