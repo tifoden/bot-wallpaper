@@ -1,3 +1,5 @@
+![Bot Animated Wallpaper preview](docs/banner.png)
+
 # Bot Wallpaper
 
 [English](#english) · [日本語](#日本語) · [简体中文](#简体中文) · [한국어](#한국어)
