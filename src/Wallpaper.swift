@@ -2,8 +2,9 @@ import Cocoa
 import AVFoundation
 import CoreImage
 import Sparkle
+import ServiceManagement
 
-final class App: NSObject, NSApplicationDelegate {
+final class App: NSObject, NSApplicationDelegate, NSMenuDelegate {
     var windows: [NSWindow] = []
     var players: [AVQueuePlayer] = []
     var loopers: [AVPlayerLooper] = []
@@ -23,6 +24,7 @@ final class App: NSObject, NSApplicationDelegate {
     var lockRefreshGeneration = 0
     var desktopCheck: NSButton!
     var lockCheck: NSButton!
+    var loginItem: NSMenuItem!
     static let translations: [String: [String]] = [
         "ko": ["Bot Wallpaper", "캐릭터 색상", "캐릭터 크기", "Grok Bot 앱 열기", "일시정지", "다시 재생", "배경화면 종료", "빨강", "주황", "귤색", "초록", "청록", "파랑", "보라", "분홍", "흰색", "아웃라인", "크게", "중간", "작게", "하단", "배경화면", "잠금화면"],
         "en": ["Bot Wallpaper", "Character color", "Character size", "Open Grok Bot", "Pause", "Resume", "Quit wallpaper", "Red", "Orange", "Amber", "Green", "Teal", "Blue", "Purple", "Pink", "White", "Outline", "Large", "Medium", "Small", "Bottom", "Desktop", "Lock screen"],
@@ -67,6 +69,27 @@ final class App: NSObject, NSApplicationDelegate {
         }
         return Self.translations["en"]!
     }()
+    static let loginLabels: [String: String] = [
+        "ko": "로그인 시 자동 실행", "en": "Launch at login", "ja": "ログイン時に起動", "zh-Hans": "登录时启动", "zh-Hant": "登入時啟動",
+        "es": "Abrir al iniciar sesión", "fr": "Ouvrir à la connexion", "de": "Bei Anmeldung öffnen", "pt": "Abrir ao iniciar sessão",
+        "it": "Apri al login", "nl": "Open bij inloggen", "ru": "Запускать при входе", "uk": "Запускати під час входу",
+        "ar": "التشغيل عند تسجيل الدخول", "hi": "लॉगिन पर खोलें", "id": "Buka saat masuk", "vi": "Mở khi đăng nhập",
+        "th": "เปิดเมื่อเข้าสู่ระบบ", "tr": "Girişte aç", "pl": "Otwórz po zalogowaniu", "sv": "Öppna vid inloggning",
+        "da": "Åbn ved login", "fi": "Avaa kirjauduttaessa", "nb": "Åpne ved pålogging", "cs": "Otevřít při přihlášení",
+        "el": "Άνοιγμα κατά τη σύνδεση", "he": "פתיחה בעת התחברות", "ro": "Deschide la autentificare", "hu": "Megnyitás bejelentkezéskor"
+    ]
+    var loginLabel: String {
+        for language in Locale.preferredLanguages {
+            let lower = language.lowercased()
+            if lower.hasPrefix("zh") {
+                let traditional = lower.contains("hant") || lower.hasPrefix("zh-tw") || lower.hasPrefix("zh-hk") || lower.hasPrefix("zh-mo")
+                return Self.loginLabels[traditional ? "zh-Hant" : "zh-Hans"]!
+            }
+            let code = lower.split(separator: "-").first.map(String.init) ?? "en"
+            if let result = Self.loginLabels[code == "no" ? "nb" : code] { return result }
+        }
+        return Self.loginLabels["en"]!
+    }
     func t(_ index: Int) -> String { text[index] }
     var sizeNames: [String] { Array(text[17...20]) }
     var sizeButtons: [NSButton] = []
@@ -188,6 +211,13 @@ final class App: NSObject, NSApplicationDelegate {
         targetsItem.view = targets
         menu.addItem(targetsItem)
         menu.addItem(NSMenuItem.separator())
+        loginItem = NSMenuItem(title: loginLabel, action: #selector(toggleLaunchAtLogin), keyEquivalent: "")
+        loginItem.target = self
+        menu.addItem(loginItem)
+        menu.delegate = self
+        configureLaunchAtLogin()
+        refreshLoginItem()
+        menu.addItem(NSMenuItem.separator())
         menu.addItem(menuRow(title: t(3), symbol: "grok-avatar", action: #selector(openGrokBot)))
         menu.addItem(NSMenuItem.separator())
         let pauseRow = menuRow(title: t(4), symbol: "pause.fill", action: #selector(togglePause))
@@ -216,6 +246,57 @@ final class App: NSObject, NSApplicationDelegate {
             }
         }
         NotificationCenter.default.addObserver(self, selector: #selector(screensChanged), name: NSApplication.didChangeScreenParametersNotification, object: nil)
+    }
+    private var appIsInstalled: Bool {
+        let system = URL(fileURLWithPath: "/Applications", isDirectory: true)
+        let user = FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent("Applications", isDirectory: true)
+        return AppInstaller.isInApplications(Bundle.main.bundleURL, roots: [system, user])
+    }
+    private func configureLaunchAtLogin() {
+        let defaults = UserDefaults.standard
+        guard defaults.object(forKey: "launchAtLoginConfigured") == nil, appIsInstalled else { return }
+        do {
+            if SMAppService.mainApp.status == .notRegistered { try SMAppService.mainApp.register() }
+            let status = SMAppService.mainApp.status
+            if status == .enabled || status == .requiresApproval {
+                defaults.set(true, forKey: "launchAtLoginConfigured")
+            }
+        } catch { NSLog("Bot Wallpaper: could not enable launch at login: %@", error.localizedDescription) }
+    }
+    private func refreshLoginItem() {
+        let status = SMAppService.mainApp.status
+        loginItem.state = status == .enabled ? .on : .off
+        loginItem.toolTip = status == .requiresApproval ? (Locale.preferredLanguages.first?.hasPrefix("ko") == true ? "시스템 설정에서 로그인 항목을 허용해 주세요." : "Allow this login item in System Settings.") : nil
+    }
+    func menuWillOpen(_ menu: NSMenu) { refreshLoginItem() }
+    @objc func toggleLaunchAtLogin() {
+        let service = SMAppService.mainApp
+        do {
+            if service.status == .requiresApproval {
+                SMAppService.openSystemSettingsLoginItems()
+            } else if service.status == .enabled {
+                try service.unregister()
+                UserDefaults.standard.set(true, forKey: "launchAtLoginConfigured")
+            } else {
+                guard appIsInstalled else {
+                    let alert = NSAlert()
+                    let korean = Locale.preferredLanguages.first?.hasPrefix("ko") == true
+                    alert.messageText = korean ? "응용 프로그램 폴더로 옮겨 주세요" : "Move the app to Applications"
+                    alert.informativeText = korean ? "자동 실행을 사용하려면 앱을 응용 프로그램 폴더로 옮겨 다시 열어 주세요." : "Move the app to Applications and reopen it to use launch at login."
+                    NSApp.activate(ignoringOtherApps: true); alert.runModal()
+                    return
+                }
+                try service.register()
+                UserDefaults.standard.set(true, forKey: "launchAtLoginConfigured")
+                if service.status == .requiresApproval { SMAppService.openSystemSettingsLoginItems() }
+            }
+        } catch {
+            let alert = NSAlert()
+            alert.messageText = Locale.preferredLanguages.first?.hasPrefix("ko") == true ? "자동 실행 설정을 변경할 수 없어요" : "Could not change launch at login"
+            alert.informativeText = error.localizedDescription
+            NSApp.activate(ignoringOtherApps: true); alert.runModal()
+        }
+        refreshLoginItem()
     }
     func menuRow(title: String, symbol: String, action: Selector) -> NSMenuItem {
         let container = NSView(frame: NSRect(x: 0, y: 0, width: 220, height: 30))
