@@ -256,7 +256,8 @@ final class App: NSObject, NSApplicationDelegate, NSMenuDelegate {
         let defaults = UserDefaults.standard
         guard defaults.object(forKey: "launchAtLoginConfigured") == nil, appIsInstalled else { return }
         do {
-            if SMAppService.mainApp.status == .notRegistered { try SMAppService.mainApp.register() }
+            let initialStatus = SMAppService.mainApp.status
+            if initialStatus == .notRegistered || initialStatus == .notFound { try SMAppService.mainApp.register() }
             let status = SMAppService.mainApp.status
             if status == .enabled || status == .requiresApproval {
                 defaults.set(true, forKey: "launchAtLoginConfigured")
