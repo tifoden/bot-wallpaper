@@ -129,7 +129,7 @@ final class App: NSObject, NSApplicationDelegate, NSMenuDelegate {
     }
     func applicationDidFinishLaunching(_ notification: Notification) {
         NSApp.setActivationPolicy(.accessory)
-        if AppInstaller.offerInstallation(onOpenFailure: { [weak self] in self?.startWallpaper() }) { return }
+        if AppInstaller.offerInstallation() { return }
         startWallpaper()
     }
     func startWallpaper() {
