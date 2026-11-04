@@ -348,7 +348,7 @@ final class App: NSObject, NSApplicationDelegate, NSMenuDelegate {
         for (i, button) in colorButtons.enumerated() {
             button.image = swatch(colors[i].1, selected: i == sender.tag)
         }
-        if (previous == 0xFFFFFF) != (value == 0xFFFFFF) { reconfigureVideoPlayers() }
+        if previous != value { reconfigureVideoPlayers() }
         if paused { updatePausedImage() }
         if previous != value { queueLockRefresh() }
         status.menu?.cancelTracking()
@@ -552,11 +552,24 @@ final class App: NSObject, NSApplicationDelegate, NSMenuDelegate {
         })
         return item
     }
+    func wallpaperVideo(for value: UInt32) -> (url: URL, filtered: Bool)? {
+        let variants: [UInt32: String] = [
+            0xFF263C: "red", 0xFF6700: "orange", 0xFF9800: "amber", 0x00C972: "green",
+            0x00BCA6: "teal", 0x1084FE: "blue", 0x9159FE: "purple", 0xFF309B: "pink", 0x1000000: "outline"
+        ]
+        if let name = variants[value], let url = Bundle.main.url(forResource: name, withExtension: "mov", subdirectory: "Variants") {
+            return (url, false)
+        }
+        guard let url = Bundle.main.url(forResource: "Grok Bot", withExtension: "mp4") else { return nil }
+        return (url, value != 0xFFFFFF)
+    }
     func reconfigureVideoPlayers() {
-        guard let url = Bundle.main.url(forResource: "Grok Bot", withExtension: "mp4") else { return }
+        colorLock.lock(); let value = selectedColor; colorLock.unlock()
+        guard let source = wallpaperVideo(for: value) else { return }
+        let url = source.url
         playbackGeneration += 1
         let generation = playbackGeneration
-        colorLock.lock(); let filtered = selectedColor != 0xFFFFFF; colorLock.unlock()
+        let filtered = source.filtered
         for index in players.indices {
             let player = players[index]
             let current = player.currentTime()
@@ -576,9 +589,13 @@ final class App: NSObject, NSApplicationDelegate, NSMenuDelegate {
     }
     func setup() {
         playbackGeneration += 1
+        players.forEach { $0.pause() }; loopers.forEach { $0.disableLooping() }
         windows.forEach { $0.close() }; windows.removeAll(); players.removeAll(); loopers.removeAll(); stillLayers.removeAll(); videoLayers.removeAll(); contentViews.removeAll(); originalLayers.removeAll()
-        guard let url = Bundle.main.url(forResource: "Grok Bot", withExtension: "mp4") else { return }
+        colorLock.lock(); let value = selectedColor; colorLock.unlock()
+        guard let source = wallpaperVideo(for: value) else { return }
         let savedPaths = UserDefaults.standard.stringArray(forKey: "originalWallpaperPaths") ?? []
+        // Older macOS releases may render only the most recent layer for a player.
+        let sharePlayer = ProcessInfo.processInfo.operatingSystemVersion.majorVersion >= 27
         for (screenIndex, screen) in NSScreen.screens.enumerated() {
             // The initializer positions its rectangle relative to the chosen screen.
             let window = NSWindow(contentRect: NSRect(origin: .zero, size: screen.frame.size), styleMask: .borderless, backing: .buffered, defer: false, screen: screen)
@@ -604,12 +621,17 @@ final class App: NSObject, NSApplicationDelegate, NSMenuDelegate {
             original.isHidden = true
             view.layer?.addSublayer(original)
             originalLayers.append(original)
-            let player = AVQueuePlayer()
-            player.isMuted = true
-            player.automaticallyWaitsToMinimizeStalling = false
-            colorLock.lock(); let filtered = selectedColor != 0xFFFFFF; colorLock.unlock()
-            let item = makePlayerItem(url: url, filtered: filtered)
-            let looper = AVPlayerLooper(player: player, templateItem: item)
+            let player: AVQueuePlayer
+            if sharePlayer, let existing = players.first {
+                player = existing
+            } else {
+                player = AVQueuePlayer()
+                player.isMuted = true
+                player.automaticallyWaitsToMinimizeStalling = false
+                let item = makePlayerItem(url: source.url, filtered: source.filtered)
+                let looper = AVPlayerLooper(player: player, templateItem: item)
+                players.append(player); loopers.append(looper)
+            }
             let layer = AVPlayerLayer(player: player)
             layer.videoGravity = .resizeAspectFill
             layer.frame = view.bounds
@@ -626,7 +648,7 @@ final class App: NSObject, NSApplicationDelegate, NSMenuDelegate {
             contentViews.append(view)
             window.contentView = view
             window.orderFrontRegardless()
-            windows.append(window); players.append(player); loopers.append(looper)
+            windows.append(window)
         }
         applySize()
         if paused { updatePausedImage() }
