@@ -18,7 +18,6 @@ export FEED_URL="https://github.com/$GITHUB_REPOSITORY/releases/latest/download/
 APP="${BUILD_DIR:-/tmp/bot-wallpaper-release-build}/Bot Wallpaper.app"
 OUT="${RELEASE_DIR:-$PROJECT_DIR/release}"
 mkdir -p "$OUT"
-ARCHIVE="$OUT/Bot-Wallpaper-$VERSION.zip"
 DISK_IMAGE="$OUT/Bot-Wallpaper-$VERSION.dmg"
 STAGING_DIR="$(mktemp -d -t bot-wallpaper-notary)"
 STAGING="$STAGING_DIR/notary.zip"
@@ -29,7 +28,6 @@ xcrun stapler staple "$APP"
 xcrun stapler validate "$APP"
 codesign --verify --deep --strict "$APP"
 spctl --assess --type execute --verbose "$APP"
-ditto -c -k --sequesterRsrc --keepParent "$APP" "$ARCHIVE"
 python3 -m dmgbuild -s "$PROJECT_DIR/packaging/dmg-settings.py" \
   -D "app=$APP" -D "background=$PROJECT_DIR/packaging/background.png" \
   "Bot Wallpaper" "$STAGING_DIR/installer.dmg"
@@ -40,7 +38,25 @@ xcrun stapler validate "$STAGING_DIR/installer.dmg"
 codesign --verify --verbose=2 "$STAGING_DIR/installer.dmg"
 cp "$STAGING_DIR/installer.dmg" "$DISK_IMAGE"
 mkdir -p "$STAGING_DIR/feed"
-cp "$ARCHIVE" "$STAGING_DIR/feed/"
+cp "$DISK_IMAGE" "$STAGING_DIR/feed/"
 "$PROJECT_DIR/vendor/bin/generate_appcast" --account tifoden.bot-wallpaper --download-url-prefix "https://github.com/$GITHUB_REPOSITORY/releases/download/v$VERSION/" "$STAGING_DIR/feed"
 cp "$STAGING_DIR/feed/appcast.xml" "$OUT/appcast.xml"
-echo "Prepared $DISK_IMAGE, $ARCHIVE and $OUT/appcast.xml. Review before publishing."
+SIGNATURE="$(python3 - "$OUT/appcast.xml" "$DISK_IMAGE" "$BUILD_NUMBER" <<'PYTHON'
+import os, sys, xml.etree.ElementTree as ET
+feed, image, build = sys.argv[1:]
+ns = '{http://www.andymatuschak.org/xml-namespaces/sparkle}'
+item = ET.parse(feed).find('./channel/item')
+assert item is not None and item.findtext(ns + 'version') == build
+entry = item.find('enclosure')
+assert entry is not None and entry.attrib['url'].endswith('/' + os.path.basename(image))
+assert int(entry.attrib['length']) == os.path.getsize(image)
+print(entry.attrib[ns + 'edSignature'])
+PYTHON
+)"
+"$PROJECT_DIR/vendor/bin/sign_update" --account tifoden.bot-wallpaper --verify "$DISK_IMAGE" "$SIGNATURE"
+cp "$DISK_IMAGE" "$STAGING_DIR/tampered.dmg"
+printf 'tampered' >> "$STAGING_DIR/tampered.dmg"
+if "$PROJECT_DIR/vendor/bin/sign_update" --account tifoden.bot-wallpaper --verify "$STAGING_DIR/tampered.dmg" "$SIGNATURE" >/dev/null 2>&1; then
+  echo 'Signature verification unexpectedly accepted a modified DMG' >&2; exit 1
+fi
+echo "Prepared $DISK_IMAGE and $OUT/appcast.xml. Review before publishing."

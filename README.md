@@ -40,7 +40,7 @@ NOTARY_PROFILE='profile-name' \
 scripts/release-local.sh
 ```
 
-The script signs, notarizes and staples the app, then creates a ZIP and signed `appcast.xml` locally; it does not publish to GitHub. Review and upload both assets to the matching GitHub Release. Increase `BUILD_NUMBER` for each release, and verify the public download and feed URLs afterward. Keep credentials and Sparkle private keys out of the repository. The Sparkle Keychain account for this project is `tifoden.bot-wallpaper`; safeguard it because losing the key can affect updates for existing users.
+The script signs, notarizes and staples the app and DMG, then creates a signed `appcast.xml` for the DMG locally; it does not publish to GitHub. Review and upload both assets to the matching GitHub Release. Increase `BUILD_NUMBER` for each release, and verify the public download and feed URLs afterward. Keep credentials and Sparkle private keys out of the repository. The Sparkle Keychain account for this project is `tifoden.bot-wallpaper`; safeguard it because losing the key can affect updates for existing users.
 
 ### Attribution
 
