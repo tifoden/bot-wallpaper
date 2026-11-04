@@ -580,7 +580,10 @@ final class App: NSObject, NSApplicationDelegate, NSMenuDelegate {
         guard let url = Bundle.main.url(forResource: "Grok Bot", withExtension: "mp4") else { return }
         let savedPaths = UserDefaults.standard.stringArray(forKey: "originalWallpaperPaths") ?? []
         for (screenIndex, screen) in NSScreen.screens.enumerated() {
-            let window = NSWindow(contentRect: screen.frame, styleMask: .borderless, backing: .buffered, defer: false, screen: screen)
+            // The initializer positions its rectangle relative to the chosen screen.
+            let window = NSWindow(contentRect: NSRect(origin: .zero, size: screen.frame.size), styleMask: .borderless, backing: .buffered, defer: false, screen: screen)
+            window.isReleasedWhenClosed = false
+            window.setFrame(screen.frame, display: false)
             window.level = NSWindow.Level(rawValue: Int(CGWindowLevelForKey(.desktopWindow)) + 1)
             window.collectionBehavior = [.canJoinAllSpaces, .stationary, .ignoresCycle]
             window.ignoresMouseEvents = true
