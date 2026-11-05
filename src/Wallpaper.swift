@@ -18,7 +18,7 @@ final class App: NSObject, NSApplicationDelegate, NSMenuDelegate {
     var sessionActive = true
     var displayAwake = true
     var lockEnabled = false
-    let lockMediaRevision = 3
+    let lockMediaRevision = 4
     var lockUpdatePending = false
     var lockUpdatingEnable = false
     var lockRefreshGeneration = 0
